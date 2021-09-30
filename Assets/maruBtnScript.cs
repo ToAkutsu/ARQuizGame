@@ -7,8 +7,8 @@ using UnityEngine.UI;
 using Image = UnityEngine.UI.Image;
 using System.IO;
 
-using OpenCvSharp;
-using OpenCvSharp.Demo;
+//using OpenCvSharp;
+//using OpenCvSharp.Demo;
 
 public class maruBtnScript : MonoBehaviour
 {
@@ -36,7 +36,7 @@ public class maruBtnScript : MonoBehaviour
     public RawImage preview;//プレビュー領域
     UnityEngine.Rect capRect;//キャプチャ領域を保持
     Texture2D capTexture;//キャプチャ画像を保持
-    Mat bgraMat, binMat;//OpenCVで使う画像を保持
+   // Mat bgraMat, binMat;//OpenCVで使う画像を保持
     public GameObject original;//スタンプのテンプレオブジェクト(テクスチャ付きのquad)
     List<GameObject> stampList = new List<GameObject>();
 
@@ -118,75 +118,75 @@ public class maruBtnScript : MonoBehaviour
     public void startCV()//ボタン押下時
     {
         Debug.Log("(・∀・)ｲｲ!!");
-        StartCoroutine(ImageProcessing());//コルーチンの実行
+      //  StartCoroutine(ImageProcessing());//コルーチンの実行
     }
 
  
-    IEnumerator ImageProcessing() {
-        canvas.SetActive(false);//canvas上のUIを一時的に消す
-        //qText.enabled = false;
-        //testBtn.SetActive(false);
-        if (bgraMat != null) {
-            bgraMat.Release();
-        }
-        if (binMat != null){
-            binMat.Release();
-        }//Mat用に確保したメモリを解放
-        yield return new WaitForEndOfFrame();//フレーム終了を待つ
-        CreateImages();//画像の生成
-        SetColor(capTexture);//テクスチャに色をセット
-        judgeCard();
-        Debug.Log("(・∀・)");
-        canvas.SetActive(true);//canvas上のUIを再表示
-        Debug.Log("(・∀・)ｲ");
-        preview.enabled = true;//プレビューを表示する
-        //qText.enabled = true;
-        //testBtn.SetActive(true);
-    }
+    //IEnumerator ImageProcessing() {
+    //    canvas.SetActive(false);//canvas上のUIを一時的に消す
+    //    //qText.enabled = false;
+    //    //testBtn.SetActive(false);
+    //    if (bgraMat != null) {
+    //        bgraMat.Release();
+    //    }
+    //    if (binMat != null){
+    //        binMat.Release();
+    //    }//Mat用に確保したメモリを解放
+    //    yield return new WaitForEndOfFrame();//フレーム終了を待つ
+    //    CreateImages();//画像の生成
+    //    SetColor(capTexture);//テクスチャに色をセット
+    //    judgeCard();
+    //    Debug.Log("(・∀・)");
+    //    canvas.SetActive(true);//canvas上のUIを再表示
+    //    Debug.Log("(・∀・)ｲ");
+    //    preview.enabled = true;//プレビューを表示する
+    //    //qText.enabled = true;
+    //    //testBtn.SetActive(true);
+    //}
 
-    void CreateImages() {
+    //void CreateImages() {
 
-        capTexture.ReadPixels(capRect, 0, 0);//キャプチャ開始
-        capTexture.Apply();//各画素の色をテクスチャに反映
+    //    capTexture.ReadPixels(capRect, 0, 0);//キャプチャ開始
+    //    capTexture.Apply();//各画素の色をテクスチャに反映
 
-        bgraMat = OpenCvSharp.Unity.TextureToMat(capTexture);//Texture2dをMatに変換
-        binMat = bgraMat.CvtColor(ColorConversionCodes.BGRA2GRAY);//カラー画像をグレースケール(濃淡)画像に変換
-        binMat = binMat.Threshold(100, 255, ThresholdTypes.Otsu); //大津の方法で二値化結果を白黒反転
-        bgraMat = binMat.CvtColor(ColorConversionCodes.GRAY2BGRA);//後で色を変えられるようにカラー(BGR)に変換
-     }
+    //    bgraMat = OpenCvSharp.Unity.TextureToMat(capTexture);//Texture2dをMatに変換
+    //    binMat = bgraMat.CvtColor(ColorConversionCodes.BGRA2GRAY);//カラー画像をグレースケール(濃淡)画像に変換
+    //    binMat = binMat.Threshold(100, 255, ThresholdTypes.Otsu); //大津の方法で二値化結果を白黒反転
+    //    bgraMat = binMat.CvtColor(ColorConversionCodes.GRAY2BGRA);//後で色を変えられるようにカラー(BGR)に変換
+    // }
 
 
-    public void ChangeColor() {//ボタン押下時
-        colorNo++;
-        colorNo %= colors.Length / 3;
-        SetColor(capTexture);
-    }
+    //public void ChangeColor() {//ボタン押下時
+    //    colorNo++;
+    //    colorNo %= colors.Length / 3;
+    //    SetColor(capTexture);
+    //}
 
-    void SetColor(Texture2D texture) {
-        //Matが初期化されていない場合は何もしない
-        if (bgraMat == null || binMat == null) {
-            return;
-        }
-        unsafe {
-            byte* bgraPtr = bgraMat.DataPointer;
-            byte* binPtr = binMat.DataPointer;//各Matのピクセル情報の配列(ポインタ)を取得
-            int pixelCount = binMat.Width * binMat.Height;//全ピクセル数を算出
-            //各ピクセルを参照して黒画素なら色を塗る
-            for (int i = 0; i < pixelCount; i++) {
-                int bgraPos = i * 4;//白黒画像のi番目に相当するBGRAのデータの位置
-                if (binPtr[i] == 255){//白かったら透過
-                    bgraPtr[bgraPos + 3] = 0; //非透過
-                }
-                else {//黒かったら色を塗る
-                    bgraPtr[bgraPos] = 255; //B
-                    bgraPtr[bgraPos+1] = 0; //G
-                    bgraPtr[bgraPos+2] = 0; //R
-                    bgraPtr[bgraPos+3] = 255; //非透過
-                }
-            }
-        }
-        OpenCvSharp.Unity.MatToTexture(bgraMat, texture);//bgraMatが保持する色をテクスチャにセットする
-    }
+    //void SetColor(Texture2D texture) {
+    //    //Matが初期化されていない場合は何もしない
+    //    if (bgraMat == null || binMat == null) {
+    //        return;
+    //    }
+    //    unsafe {
+    //        byte* bgraPtr = bgraMat.DataPointer;
+    //        byte* binPtr = binMat.DataPointer;//各Matのピクセル情報の配列(ポインタ)を取得
+    //        int pixelCount = binMat.Width * binMat.Height;//全ピクセル数を算出
+    //        //各ピクセルを参照して黒画素なら色を塗る
+    //        for (int i = 0; i < pixelCount; i++) {
+    //            int bgraPos = i * 4;//白黒画像のi番目に相当するBGRAのデータの位置
+    //            if (binPtr[i] == 255){//白かったら透過
+    //                bgraPtr[bgraPos + 3] = 0; //非透過
+    //            }
+    //            else {//黒かったら色を塗る
+    //                bgraPtr[bgraPos] = 255; //B
+    //                bgraPtr[bgraPos+1] = 0; //G
+    //                bgraPtr[bgraPos+2] = 0; //R
+    //                bgraPtr[bgraPos+3] = 255; //非透過
+    //            }
+    //        }
+    //    }
+    //    OpenCvSharp.Unity.MatToTexture(bgraMat, texture);//bgraMatが保持する色をテクスチャにセットする
+    //}
 
 
 
@@ -194,103 +194,99 @@ public class maruBtnScript : MonoBehaviour
    
 
 
-    public void judgeCard() {
-        Debug.Log("(・∀・)ｲｲ!!!");
-        //Load texture
-        Mat image = OpenCvSharp.Unity.TextureToMat(capTexture);
+    //public void judgeCard() {
+    //    Debug.Log("(・∀・)ｲｲ!!!");
+    //    //Load texture
+    //    Mat image = OpenCvSharp.Unity.TextureToMat(capTexture);
 
-        //Gray scale image
-        Mat grayMat = new Mat();
-        Cv2.CvtColor(image, grayMat, ColorConversionCodes.BGR2GRAY);
+    //    //Gray scale image
+    //    Mat grayMat = new Mat();
+    //    Cv2.CvtColor(image, grayMat, ColorConversionCodes.BGR2GRAY);
 
-        Mat thresh = new Mat();
-        Cv2.Threshold(grayMat, thresh, 127, 255, ThresholdTypes.BinaryInv);
-
-
-        // Extract Contours
-        Point[][] contours;
-        HierarchyIndex[] hierarchy;
-        Cv2.FindContours(thresh, out contours, out hierarchy, RetrievalModes.Tree, ContourApproximationModes.ApproxNone, null);
-
-        foreach (Point[] contour in contours)
-        {
-            double length = Cv2.ArcLength(contour, true);
-            Point[] approx = Cv2.ApproxPolyDP(contour, length * 0.01, true);
-            string shapeName = null;
-            Scalar color = new Scalar();
+    //    Mat thresh = new Mat();
+    //    Cv2.Threshold(grayMat, thresh, 127, 255, ThresholdTypes.BinaryInv);
 
 
-            if (approx.Length == 2)
-            {
+    //    // Extract Contours
+    //    Point[][] contours;
+    //    HierarchyIndex[] hierarchy;
+    //    Cv2.FindContours(thresh, out contours, out hierarchy, RetrievalModes.Tree, ContourApproximationModes.ApproxNone, null);
+
+    //    foreach (Point[] contour in contours)
+    //    {
+    //        double length = Cv2.ArcLength(contour, true);
+    //        Point[] approx = Cv2.ApproxPolyDP(contour, length * 0.01, true);
+    //        string shapeName = null;
+    //        Scalar color = new Scalar();
+
+
+    //        if (approx.Length == 2)
+    //        {
                 
-                shapeName = "Cross";
-                color = new Scalar(0, 255, 0);
-            }
-            if (approx.Length == 3)
-            {
+    //            shapeName = "Cross";
+    //            color = new Scalar(0, 255, 0);
+    //        }
+    //        if (approx.Length == 3)
+    //        {
                
-                shapeName = "Triangle";
-                color = new Scalar(0, 255, 0);
-            }
-            else if (approx.Length == 4)
-            {
-                Debug.Log("い");
-                OpenCvSharp.Rect rect = Cv2.BoundingRect(contour);
-                if (rect.Width / rect.Height <= 0.1)
-                {
-                    Debug.Log("う");
-                    shapeName = "Square";
-                    color = new Scalar(0, 125, 255);
-                }
-                else
-                {
-                    Debug.Log("ああ");
-                    shapeName = "Rectangle";
-                    color = new Scalar(0, 0, 255);
-                }
-            }
-            else if (approx.Length == 10)
-            {
-                Debug.Log("ばつ");
-                shapeName = "Star";
-                color = new Scalar(255, 255, 0);
-            }
-            else if (approx.Length >= 15)
-            {
-                Debug.Log("まる");
-                shapeName = "Circle";
-                color = new Scalar(0, 255, 255);
+    //            shapeName = "Triangle";
+    //            color = new Scalar(0, 255, 0);
+    //        }
+    //        else if (approx.Length == 4)
+    //        {
+    //            Debug.Log("い");
+    //            OpenCvSharp.Rect rect = Cv2.BoundingRect(contour);
+    //            if (rect.Width / rect.Height <= 0.1)
+    //            {
+    //                Debug.Log("う");
+    //                shapeName = "Square";
+    //                color = new Scalar(0, 125, 255);
+    //            }
+    //            else
+    //            {
+    //                Debug.Log("ああ");
+    //                shapeName = "Rectangle";
+    //                color = new Scalar(0, 0, 255);
+    //            }
+    //        }
+    //        else if (approx.Length == 10)
+    //        {
+    //            Debug.Log("ばつ");
+    //            shapeName = "Star";
+    //            color = new Scalar(255, 255, 0);
+    //        }
+    //        else if (approx.Length >= 15)
+    //        {
+    //            Debug.Log("まる");
+    //            shapeName = "Circle";
+    //            color = new Scalar(0, 255, 255);
 
-                if (csvDatas[1][qCnt] == "1")
-                {
+    //            if (csvDatas[1][qCnt] == "1")
+    //            {
 
-                   // maruObj.SetActive(true);
-                    //Instantiate(maruObj, AnchorStage.transform.position, AnchorStage.transform.rotation);
-                    break;
-                }
-                else
-                {
-                    //batuObj.SetActive(true);
+    //               // maruObj.SetActive(true);
+    //                //Instantiate(maruObj, AnchorStage.transform.position, AnchorStage.transform.rotation);
+    //                break;
+    //            }
+    //            else
+    //            {
+    //                //batuObj.SetActive(true);
                   
-                    break;
-                }
-            }
+    //                break;
+    //            }
+    //        }
 
-            if (shapeName != null)
-            {
-                Moments m = Cv2.Moments(contour);
-                int cx = (int)(m.M10 / m.M00);
-                int cy = (int)(m.M01 / m.M00);
+    //        if (shapeName != null)
+    //        {
+    //            Moments m = Cv2.Moments(contour);
+    //            int cx = (int)(m.M10 / m.M00);
+    //            int cy = (int)(m.M01 / m.M00);
 
-                Cv2.DrawContours(image, new Point[][] { contour }, 0, color, -1);
-                Cv2.PutText(image, shapeName, new Point(cx - 50, cy), HersheyFonts.HersheySimplex, 1.0, new Scalar(0, 0, 0));
-            }
-        }
-
-
-
-
-    }
+    //            Cv2.DrawContours(image, new Point[][] { contour }, 0, color, -1);
+    //            Cv2.PutText(image, shapeName, new Point(cx - 50, cy), HersheyFonts.HersheySimplex, 1.0, new Scalar(0, 0, 0));
+    //        }
+    //    }
+   // }
     // Update is called once per frame
     void Update()
     {
